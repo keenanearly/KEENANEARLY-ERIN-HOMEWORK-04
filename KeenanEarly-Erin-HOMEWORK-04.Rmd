@@ -1,0 +1,127 @@
+---
+title: "KEENANEARLY-ERIN-HOMEWORK-04"
+author: "Erin Keenan Early"
+date: "April 12, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+When we initially discussed the central limit theorem and confidence intervals, we showed how we could use bootstrapping to estimate standard errors and confidence intervals around certain parameter values, like the mean. Using bootstrapping, we could also do the same for estimating standard errors and CIs around regression parameters, such as β coefficients.
+
+[1] Using the “KamilarAndCooperData.csv” dataset... 
+
+```{r}
+library(readr)
+f <- "https://raw.githubusercontent.com/difiore/ADA-2019/master/KamilarAndCooperData.csv"
+d <- read_csv(f, col_names = TRUE)
+names(d)
+```
+
+...run a linear regression looking at log(HomeRange_km2) in relation to log(Body_mass_female_mean) and report your β coeffiecients (slope and intercept).
+
+```{r}
+homebody<- lm(log(HomeRange_km2)~log(Body_mass_female_mean), data=d)
+summary(homebody)
+```
+
+The intercept is -9.44123 and the slope is 1.03643.
+
+
+
+[2] Then, use bootstrapping to sample from your data 1000 times with replacement, each time fitting the same model and calculating the appropriate coefficients. [The size of each sample should be equivalent to the number of observations in your dataset.] This generates a sampling distribution for each β coefficient. Plot a histogram of these sampling distributions.
+
+
+```{r}
+n<- 44
+home<- NULL
+body<- NULL
+model<- vector("list",1000)
+beta0<- NULL
+beta1<- NULL
+for (i in 1:1000) {
+  home <- sample(d$HomeRange_km2, size= 44, replace = TRUE, prob=NULL)
+  body <- sample(d$Body_mass_female_mean, size= 44, replace = TRUE, prob=NULL)
+  beta0[i]<- lm(home~body)$coefficients["(Intercept)"]
+  beta1[i]<- lm(home~body)$coefficients["body"]
+}
+
+head(beta0)
+head(beta1)
+
+```
+
+```{r}
+hist(beta0, main="Histogram of Intercepts")
+hist(beta1, main="Histogram of Slopes")
+```
+
+
+[3] Estimate the standard error for each of your β coefficients as the standard deviation of the sampling distribution from your bootstrap.
+
+```{r}
+sem0<- sd(beta0)/sqrt(1000)
+sem1<- sd(beta1)/sqrt(1000)
+sem0
+sem1
+```
+
+
+[4] Also determine the 95% CI for each of your β coefficients based on the appropriate quantiles from your sampling distribution.
+
+```{r}
+ci0lower<- sem0*qnorm(0.025, mean=0, sd=1)
+ci0upper<- sem0*qnorm(0.975, mean=0, sd=1)
+ci1lower<- sem1*qnorm(0.025, mean=0, sd=1)
+ci1upper<- sem1*qnorm(0.975, mean=0, sd=1)
+ci0upper
+ci0lower
+ci1upper
+ci1lower
+```
+
+[5] How does your answer to part [3] compare to the SE estimated from your entire dataset using the formula for standard error implemented in lm()?
+
+```{r}
+summary(homebody)
+sem0
+sem1
+```
+
+My standard error for my lm() is 0.67293 for the intercept at 0.08488 for the slope.
+
+My standard error for my beta0 (intercept) sampling distribution is 0.04242131 and my standard error for my beta1 (slope) sampling distribution is 6.78284e-06.
+
+My sampling distribution standard errors are significantly smaller than those given by lm(). This is in keeping with expectations following increased sampling size. 
+
+
+
+[6] How does your answer to part [4] compare to the 95% CI estimated from your entire dataset?
+
+```{r}
+ciintlower<- 0.67293/qnorm(0.025, mean=0, sd=1)
+ciintupper<- 0.67293/qnorm(0.975, mean=0, sd=1)
+cisllower<- 0.08488/qnorm(0.025, mean=0, sd=1)
+cislupper<- 0.08488/qnorm(0.975, mean=0, sd=1)
+ciintupper
+ciintlower
+ci0upper
+ci0lower
+```
+Confidence intervals for the intercept from the original dataset (upper=0.3433379, lower=-0.3433379) are higher than those for the sampling distribution (upper=0.08314424, lower=-0.08314424). This is in line with expectations following an increase in sample size, which leads to a smaller confidence interval.
+
+```{r}
+cislupper
+cisllower
+ci1upper
+ci1lower
+```
+
+Confidence intervals for the slope from the original dataset (upper=0.04330692, lower=-0.04330692) are higher than those for the sampling distribution (upper=1.329413e-05, lower=-1.329413e-05). This is in line with expectations following an increase in sample size, which leads to a smaller confidence interval.
+
+
+
+
+
